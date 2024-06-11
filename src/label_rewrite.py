@@ -31,7 +31,7 @@ def gen_classes(class_txt:Dict,class_filter:Dict,gen_cls:str):
 
 
 def run(labels_path:str,class_filter:Union[Dict[str,int],Dict[int,int]],
-                  label_name,gen_path:str=None):
+                  label_name,rm_empty=False,gen_path:str=None):
     
     gen_p = Path(labels_path).parent / label_name if gen_path is None else Path(gen_path)
     gen_p.mkdir(exist_ok=True) 
@@ -42,23 +42,32 @@ def run(labels_path:str,class_filter:Union[Dict[str,int],Dict[int,int]],
         class_filter = unify_filter(class_filter,class_txt)
     for l_p,label in tqdm(label_info.gen_label(),total=len(label_info)):
         n_p = gen_p / l_p.name
-        with n_p.open('w') as f:
-            if label:
-                for row in label:
-                    if int(row[0]) in class_filter.keys():
-                        row[0]=str(class_filter[int(row[0])])+' '
-                        f.write(' '.join(row)+'\n')
-            else:
-                continue
+        label_str = ''
+        for row in label:
+            if int(row[0]) in class_filter.keys():
+                row[0]=str(class_filter[int(row[0])])
+                label_str+=' '.join(row)+'\n'
+        if len(label_str) or not rm_empty:
+            with open(str(n_p),'w') as f:
+                f.write(label_str)
     gen_classes(class_txt,class_filter,gen_p / 'classes.txt')
 
 
-def arg_parse():
+def filter_parse(x:str):
     import json
+    if Path(x).is_file():
+        with open(x) as f:
+            x = json.load(f)
+        return x 
+    else:
+        return json.loads(x)
+
+def arg_parse():
     parser = argparse.ArgumentParser(description='rewrite label')
     parser.add_argument('--labels_path',type=str,required=True)
-    parser.add_argument('--class_filter',type=json.loads,required=True)
+    parser.add_argument('--class_filter',type=filter_parse,required=True)
     parser.add_argument('--label_name',type=str,required=False,default='labels2')
+    parser.add_argument('--rm_empty',action='store_true')
     args = parser.parse_args()  
     return args
 

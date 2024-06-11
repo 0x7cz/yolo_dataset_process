@@ -12,8 +12,10 @@ class RmAnnInfo:
         self.remove_label = set()
     def remove_info(self):
         for l_p in self.labels_p.rglob('*.txt'):
+            if l_p.name == 'classes.txt':
+                continue
             im_p = self.images_p / l_p.with_suffix('.jpg').name
-            if not im_p.exists():
+            if not im_p.exists() :
                 self.remove_label.add(l_p)
         for im_p in self.images_p.rglob('*.jpg'):
             l_p = self.labels_p / im_p.with_suffix('.txt').name
@@ -39,7 +41,7 @@ class RmAnnInfo:
 
 def arg_parse():
     
-    parser = argparse.ArgumentParser(description='图片可视化')
+    parser = argparse.ArgumentParser()
     parser.add_argument('--labels_path',type=str,required=True)
     parser.add_argument('--images_path',type=str,required=False)
     args = parser.parse_args()  
